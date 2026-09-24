@@ -12,36 +12,6 @@
 
 Оригинальный модуль **DLE UniForm** разработан **Павлом Белоусовым (ПафНутиЙ / pafnuty)** и распространяется по лицензии MIT. Большое спасибо автору за разработку! Шапки с его авторством сохранены во всех файлах кода, как того требует лицензия MIT.
 
-## Что изменено по сравнению с 2.0.0
-
-Адаптация под DLE 21.0 / PHP 8.3 (полный журнал правок вёлся на рабочей установке DLE 21.0):
-
-**`engine/ajax/uniform.php`**
-- Проверка `!empty($banned_info['ip'])` перед `check_ip()` (устранён undefined index в PHP 8)
-- Санитизация `$_REQUEST['formConfig]` через `preg_replace` - защита от path traversal в пути к `config.tpl`
-
-**`engine/modules/uniform/uniform.php`**
-- Убрана `convert_unicode()` - функция удалена из DLE 21 (движок работает только в UTF-8)
-- Добавлена проверка `isset($_POST['csrfToken'])` перед `checkToken()`
-- Проверки `is_array($newsItem)` / `!empty($newsItem['id'])` после `super_query`
-- `implode` для значений-массивов в тегах `{uf_field_*}`
-- Проверка `is_array($_REQUEST['fields'])` при обработке скрытых полей
-- **Action формы изменён:** `/engine/ajax/controller.php?mod=uniform` → `/index.php?controller=ajax&mod=uniform` - в DLE 21 прямой вызов `controller.php` запрещён, весь AJAX идёт через `index.php?controller=ajax` (см. `plugins.class.php`)
-- **Убран прямой `require parse.class.php`** - он обходил `spl_autoload` DLE, который подгружает HTMLPurifier только при запросе класса `ParseFilter` (`plugins.class.php`), что приводило к Fatal error «Class HTMLPurifier_Config not found» при POST
-
-**`engine/modules/uniform/functions.php`**
-- Убрана `convert_unicode()` в `assignFiedls()`
-
-**`engine/modules/uniform/sendmail.php`**
-- `xfieldsload(true)` / `xfieldsdataload()` заменены на `DLEUserXFields::GETFields()` / `DLEUserXFields::xfieldsdataload()` (класс DLE 14.3+, подгружается автозагрузкой)
-- Доступ к допполям по именованным ключам (`$value['name']`, `$value['private']`) вместо числовых
-- Добавлены `is_array`/`isset`-проверки для `super_query`, `parse_url`, `$_SERVER['HTTP_REFERER']`, `$mailHeader`, `$arSendMail['email']`
-
-**`templates/{THEME}/uniform/js/uniform.js`**
-- URL AJAX-запросов: `dle_root + 'engine/ajax/controller.php'` → `dle_root + 'index.php?controller=ajax'` (в двух местах: открытие попапа Magnific Popup и инлайн-загрузка форм)
-
-Совместимость остального кода подтверждена по исходникам DLE 21 без правок: `dle_mail`, `addAttachment`, `dle_template`, `dle_cache`/`create_cache`, `check_ip`, `get_vars`/`set_vars`, `SECURE_AUTH_KEY`, `use_admin_mail`.
-
 ## Установка
 
 ### Шаг 1. Файлы движка
@@ -79,8 +49,6 @@ templates/ВАШ_ШАБЛОН/uniform/
 <script src="{THEME}/uniform/js/jquery.magnificpopup.min.js"></script>
 <script src="{THEME}/uniform/js/uniform.js"></script>
 ```
-
-> ⚠️ **Важно:** минификатор `engine/classes/min` **удалён из DLE 18+**. Старые примеры подключения из документации UniForm 2.0.0 (через `{THEME}/css/...,uniform/css/uniform.css` и аналогичные пути минификатора) **не работают** - файлы будут отдавать 403. Используйте только прямые ссылки `{THEME}/...`, как показано выше.
 
 ### Шаг 4. Вызов форм
 
@@ -128,7 +96,7 @@ templates/ВАШ_ШАБЛОН/uniform/
 
 ## Поддержка и услуги
 
-Адаптация выполнена командой **[The88788.com](https://the88788.com)**:
+Адаптация выполнена **[The88788.com](https://the88788.com)**:
 
 - разработка сайтов на DataLife Engine
 - адаптация шаблонов под актуальные версии DLE
