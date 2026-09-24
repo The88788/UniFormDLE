@@ -2,7 +2,7 @@
 /*
  * DLE UniForm — унверсальные формы для DLE
  *
- * @author     ПафНутиЙ <pafnuty10@gmail.com>
+ * @author     pafnuty <pafnuty10@gmail.com>
  * @link       http://pafnuty.name/
  * @link       https://twitter.com/pafnuty_name
  * @adapted    Adapted for DLE 21 / PHP 8.x by The88788.com (2026)

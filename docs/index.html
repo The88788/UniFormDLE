@@ -79,6 +79,8 @@ section.light .step code,section.white .step code,.light .inline-code,.white .in
 
 /* ---------- Cards ---------- */
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:22px}
+.cards-wide{grid-template-columns:1fr}
+.cards-wide .card code{overflow-wrap:anywhere;word-break:break-all}
 .card{background:var(--graphite-2);border:1px solid #343a43;border-radius:var(--radius);padding:28px;transition:transform .2s,border-color .2s}
 .card:hover{transform:translateY(-4px);border-color:var(--yellow)}
 section.light .card,section.white .card{background:#fff;border-color:#e6e3dc;box-shadow:0 4px 18px rgba(30,33,38,.06)}
@@ -157,15 +159,14 @@ footer a{color:var(--yellow)}
     <h1>Модуль <span>UniForm21</span><br>универсальные AJAX-формы для DLE 21</h1>
     <p class="lead">Заказ звонка, обратная связь, покупка товара и встроенные (inline) формы - без перезагрузки страницы, с отправкой на e-mail и защитой от спама. Модуль адаптирован под DLE 21.x и PHP 8.x и подходит для любого шаблона DataLife Engine 21.</p>
     <div class="badges">
-      <span class="badge"><i>●</i> UniForm21</span>
       <span class="badge"><i>●</i> DLE 21.x</span>
       <span class="badge"><i>●</i> PHP 8.0-8.3</span>
-      <span class="badge"><i>●</i> Лицензия MIT</span>
       <span class="badge"><i>●</i> 5 готовых форм</span>
     </div>
     <div class="hero-cta">
       <a class="btn btn-yellow" href="#install">Установка за 5 шагов</a>
       <a class="btn btn-ghost" href="#about">Подробнее о модуле</a>
+      <a class="btn btn-ghost" href="https://github.com/The88788/UniFormDLE" target="_blank" rel="noopener">GitHub-репозиторий</a>
     </div>
     <p style="margin-top:34px;font-size:14px;color:#8a9099;max-width:760px">Адаптация под DLE 21 / PHP 8.x: <b style="color:#e8eaee">The88788.com</b> (2026) - разработка сайтов, адаптация шаблонов, разработка модулей, администрирование серверов.</p>
   </div>
@@ -177,7 +178,6 @@ footer a{color:var(--yellow)}
     <div class="sec-head">
       <div class="sec-kicker">Обзор</div>
       <h2>Что такое UniForm</h2>
-      <p>UniForm21 - бесплатный модуль универсальных форм для DataLife Engine 21. Адаптация оригинального модуля UniForm (автор - <b style="color:#fff">Павел Белоусов (ПафНутиЙ)</b>, большое спасибо за разработку!) под актуальные версии DLE и PHP. Лицензия MIT.</p>
     </div>
     <div class="cards">
       <div class="card">
@@ -451,7 +451,7 @@ footer a{color:var(--yellow)}
       <h2>Совместимость с DLE 21 и PHP 8.x</h2>
       <p>Модуль адаптирован под DataLife Engine 21.0: убраны удалённые из движка функции, добавлены проверки для PHP 8, AJAX переключён на актуальную точку входа.</p>
     </div>
-    <div class="cards">
+    <div class="cards cards-wide">
       <div class="card">
         <span class="ico">🚪</span>
         <h3>Точка входа AJAX</h3>
@@ -477,15 +477,6 @@ footer a{color:var(--yellow)}
       <span class="n-ico">💡</span>
       <div><b>Отладка.</b> Если форма ведёт себя неожиданно, раскомментируйте <code>debug = y</code> и <code>nocache = y</code> в её config.tpl - увидите блок <code>[debug]</code> с параметрами и исключите влияние кеша. Не забудьте выключить после настройки.</div>
     </div>
-  </div>
-</section>
-
-<!-- ================= NEXT ================= -->
-<section class="dark2">
-  <div class="container" style="text-align:center">
-    <h2 style="font-size:clamp(22px,3vw,30px);margin-bottom:14px">Что изменено по сравнению с UniForm 2.0.0</h2>
-    <p style="color:#aab0b9;max-width:720px;margin:0 auto 30px">Убрана удалённая из DLE 21 функция <code>convert_unicode()</code>, устаревшие вызовы допполей заменены на <code>DLEUserXFields</code>, добавлены isset-проверки для PHP 8, исправлена автозагрузка ParseFilter/HTMLPurifier, AJAX переключён на <code>index.php?controller=ajax</code>. Полный список правок - в README.md дистрибутива.</p>
-    <a class="btn btn-yellow" href="#install">К установке →</a>
   </div>
 </section>
 
@@ -524,12 +515,12 @@ footer a{color:var(--yellow)}
 <footer>
   <div class="container">
     <h3>UniForm21 - универсальные AJAX-формы для DLE 21</h3>
-    <p>Оригинальный модуль UniForm разработан Павлом Белоусовым (ПафНутиЙ), большое спасибо автору за разработку! Лицензия MIT. Адаптация под DataLife Engine 21.x и PHP 8.x - <a href="https://the88788.com" target="_blank" rel="noopener">The88788.com</a> (2026): разработка сайтов, адаптация шаблонов, разработка модулей, администрирование серверов.</p>
+    <p>Оригинальный модуль UniForm разработан Павлом Белоусовым (pafnuty), большое спасибо автору за разработку! Лицензия MIT.</p>
     <div class="foot-links">
       <a class="btn btn-ghost" href="https://hip.hosting/?code=1b890e361ec6ae343e57" target="_blank" rel="noopener">Хостинг от $2.4/мес</a>
       <a class="btn btn-ghost" href="https://the88788.com" target="_blank" rel="noopener">The88788.com</a>
     </div>
-    <div class="copy">UniForm21 Docs · открывается локально, без внешних зависимостей (кроме Google Fonts) · Лицензия MIT</div>
+    <div class="copy">Адаптация под DataLife Engine 21.x и PHP 8.x - <a href="https://the88788.com" target="_blank" rel="noopener">The88788.com</a> (2026): разработка сайтов, адаптация шаблонов, разработка модулей, администрирование серверов.</div>
   </div>
 </footer>
 
