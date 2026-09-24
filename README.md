@@ -1,4 +1,4 @@
-# UniForm21
+# Универсальные AJAX-формы для DataLife Engine 21.x
 
 ![UniForm21 - универсальные AJAX-формы для DLE 21](https://repository-images.githubusercontent.com/34575838/70601780-87ca-11e9-88b2-24e1c100cb13)
 
