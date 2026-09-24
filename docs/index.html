@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UniForm21 - универсальные AJAX-формы для DLE 21.x (PHP 8.x)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --yellow:#fab702;
+  --yellow-dark:#e0a500;
+  --graphite:#1e2126;
+  --graphite-2:#272b32;
+  --graphite-3:#32373f;
+  --light:#f6f6f4;
+  --text:#3a3f47;
+  --muted:#8a9099;
+  --radius:10px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Roboto',Arial,sans-serif;color:var(--text);background:#fff;line-height:1.65;font-size:16px}
+h1,h2,h3,h4{font-family:'Montserrat',sans-serif;color:#fff;line-height:1.25}
+.light h2,.light h3,.light h4,.white h2,.white h3,.white h4{color:var(--graphite)}
+.container{max-width:1140px;margin:0 auto;padding:0 24px}
+
+/* ---------- Topbar ---------- */
+.topbar{position:sticky;top:0;z-index:50;background:rgba(30,33,38,.96);backdrop-filter:blur(6px);border-bottom:3px solid var(--yellow)}
+.topbar .container{display:flex;align-items:center;justify-content:space-between;height:64px}
+.brand{font-family:'Montserrat';font-weight:800;font-size:20px;color:#fff;text-decoration:none;letter-spacing:.5px}
+.brand b{color:var(--yellow)}
+.topnav a{color:#cfd3d9;text-decoration:none;font-size:14px;margin-left:22px;transition:color .2s}
+.topnav a:hover{color:var(--yellow)}
+@media(max-width:820px){.topnav{display:none}}
+
+/* ---------- Hero ---------- */
+.hero{background:linear-gradient(135deg,#1a1d22 0%,#262a31 55%,#1e2126 100%);padding:96px 0 80px;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;right:-140px;top:-140px;width:420px;height:420px;border:40px solid rgba(250,183,2,.08);border-radius:50%}
+.hero::before{content:"";position:absolute;left:-100px;bottom:-160px;width:340px;height:340px;border:30px solid rgba(250,183,2,.06);border-radius:50%}
+.hero .container{position:relative;z-index:2}
+.hero h1{font-size:clamp(30px,5vw,52px);font-weight:800;margin-bottom:18px}
+.hero h1 span{color:var(--yellow)}
+.hero p.lead{font-size:19px;color:#b9bfc8;max-width:760px;font-weight:300}
+.badges{margin-top:30px;display:flex;flex-wrap:wrap;gap:12px}
+.badge{display:inline-flex;align-items:center;gap:8px;background:var(--graphite-3);border:1px solid #3d434c;color:#e8eaee;padding:8px 16px;border-radius:100px;font-size:14px}
+.badge i{font-style:normal;color:var(--yellow)}
+.hero-cta{margin-top:38px;display:flex;flex-wrap:wrap;gap:14px}
+.btn{display:inline-block;font-family:'Montserrat';font-weight:700;font-size:15px;text-decoration:none;padding:14px 30px;border-radius:6px;transition:all .2s}
+.btn-yellow{background:var(--yellow);color:#1e2126}
+.btn-yellow:hover{background:var(--yellow-dark);transform:translateY(-2px)}
+.btn-ghost{border:2px solid #4a505a;color:#e8eaee}
+.btn-ghost:hover{border-color:var(--yellow);color:var(--yellow)}
+
+/* ---------- Sections ---------- */
+section{padding:78px 0}
+section.dark{background:var(--graphite)}
+section.dark2{background:var(--graphite-2)}
+section.light{background:var(--light)}
+section.white{background:#fff}
+.sec-head{max-width:780px;margin-bottom:44px}
+.sec-kicker{font-family:'Montserrat';font-weight:700;font-size:13px;letter-spacing:2.5px;text-transform:uppercase;color:var(--yellow);margin-bottom:12px}
+.sec-head h2{font-size:clamp(24px,3.4vw,36px);font-weight:800}
+.sec-head p{margin-top:14px;color:var(--muted)}
+section.light .sec-head p,section.white .sec-head p{color:#6b7078}
+
+/* ---------- Steps ---------- */
+.steps{display:grid;gap:22px}
+.step{display:flex;gap:22px;background:var(--graphite-2);border:1px solid #343a43;border-radius:var(--radius);padding:28px}
+section.light .step,section.white .step{background:#fff;border-color:#e6e3dc;box-shadow:0 4px 18px rgba(30,33,38,.06)}
+.step-num{flex:0 0 54px;width:54px;height:54px;border-radius:50%;background:var(--yellow);color:#1e2126;font-family:'Montserrat';font-weight:800;font-size:22px;display:flex;align-items:center;justify-content:center}
+.step h3{font-size:19px;margin-bottom:8px}
+.step p,.step li{font-size:15px;color:#aab0b9}
+section.light .step p,section.light .step li,section.white .step p,section.white .step li{color:#585e66}
+.step ul{margin:10px 0 0 18px}
+.step code,.inline-code{font-family:Consolas,'Courier New',monospace;font-size:.9em;background:rgba(250,183,2,.12);color:var(--yellow);padding:2px 7px;border-radius:4px}
+section.light .step code,section.white .step code,.light .inline-code,.white .inline-code{background:#f3ecd4;color:#8a6a00}
+
+/* ---------- Cards ---------- */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:22px}
+.card{background:var(--graphite-2);border:1px solid #343a43;border-radius:var(--radius);padding:28px;transition:transform .2s,border-color .2s}
+.card:hover{transform:translateY(-4px);border-color:var(--yellow)}
+section.light .card,section.white .card{background:#fff;border-color:#e6e3dc;box-shadow:0 4px 18px rgba(30,33,38,.06)}
+.card .ico{font-size:30px;margin-bottom:14px;display:block}
+.card h3{font-size:18px;margin-bottom:8px}
+.card p{font-size:14.5px;color:#aab0b9}
+section.light .card p,section.white .card p{color:#585e66}
+.card code{font-family:Consolas,monospace;font-size:.88em;background:rgba(250,183,2,.12);color:var(--yellow);padding:1px 6px;border-radius:4px}
+section.light .card code,section.white .card code{background:#f3ecd4;color:#8a6a00}
+
+/* ---------- Tables ---------- */
+.table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid #343a43}
+section.light .table-wrap,section.white .table-wrap{border-color:#e3e0d9;box-shadow:0 4px 18px rgba(30,33,38,.06)}
+table{width:100%;border-collapse:collapse;font-size:14.5px;min-width:620px}
+th{background:var(--yellow);color:#1e2126;font-family:'Montserrat';font-weight:700;text-align:left;padding:13px 16px;font-size:13.5px;letter-spacing:.4px}
+td{padding:12px 16px;border-top:1px solid #343a43;color:#c9ced6;vertical-align:top}
+section.light td,section.white td{border-top-color:#eceae4;color:#4a5058}
+tr:nth-child(even) td{background:rgba(255,255,255,.025)}
+section.light tr:nth-child(even) td,section.white tr:nth-child(even) td{background:#faf9f6}
+td code{font-family:Consolas,monospace;font-size:.88em;color:var(--yellow);background:rgba(250,183,2,.1);padding:1px 6px;border-radius:4px}
+section.light td code,section.white td code{color:#8a6a00;background:#f3ecd4}
+
+/* ---------- Code blocks ---------- */
+pre{background:#14161a;border:1px solid #2c3138;border-left:4px solid var(--yellow);border-radius:8px;padding:20px 22px;overflow-x:auto;font-family:Consolas,'Courier New',monospace;font-size:13.8px;line-height:1.7;color:#d7dbe1;margin:16px 0}
+pre .c{color:#6b7280}
+pre .y{color:var(--yellow)}
+pre .g{color:#8fd694}
+
+/* ---------- Callouts ---------- */
+.note{display:flex;gap:16px;border-radius:var(--radius);padding:20px 22px;margin:22px 0;font-size:15px}
+.note .n-ico{font-size:22px;line-height:1.4}
+.note-warn{background:rgba(250,183,2,.09);border:1px solid rgba(250,183,2,.45);color:#f0e3bd}
+.note-warn b{color:var(--yellow)}
+.note-tip{background:rgba(126,211,133,.08);border:1px solid rgba(126,211,133,.4);color:#cfe8d2}
+.note-tip b{color:#8fd694}
+section.light .note-warn,section.white .note-warn{background:#fdf6e0;color:#6b5a17}
+section.light .note-warn b,section.white .note-warn b{color:#9c7a00}
+section.light .note-tip,section.white .note-tip{background:#eef8ee;color:#33562f}
+section.light .note-tip b,section.white .note-tip b{color:#2e7d32}
+
+/* ---------- Footer ---------- */
+footer{background:#14161a;padding:56px 0 36px;border-top:3px solid var(--yellow)}
+footer h3{font-size:20px;margin-bottom:10px}
+footer p{color:#8a9099;font-size:14.5px;max-width:680px}
+footer a{color:var(--yellow)}
+.foot-links{margin-top:22px;display:flex;flex-wrap:wrap;gap:14px}
+.copy{margin-top:40px;padding-top:22px;border-top:1px solid #262b32;color:#5c636d;font-size:13px}
+
+@media(max-width:640px){
+  section{padding:56px 0}
+  .step{flex-direction:column;gap:14px}
+  .hero{padding:64px 0 56px}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container">
+    <a class="brand" href="index.html">Uni<b>Form21</b> <span style="font-weight:400;font-size:13px;color:#8a9099">docs</span></a>
+    <nav class="topnav">
+      <a href="#about">Что это</a>
+      <a href="#install">Установка</a>
+      <a href="#usage">Вызов формы</a>
+      <a href="#structure">Структура формы</a>
+      <a href="#custom">Своя форма</a>
+      <a href="#compat">Совместимость</a>
+      <a href="#hosting">Хостинг</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ================= HERO ================= -->
+<section class="hero">
+  <div class="container">
+    <h1>Модуль <span>UniForm21</span><br>универсальные AJAX-формы для DLE 21</h1>
+    <p class="lead">Заказ звонка, обратная связь, покупка товара и встроенные (inline) формы - без перезагрузки страницы, с отправкой на e-mail и защитой от спама. Модуль адаптирован под DLE 21.x и PHP 8.x и подходит для любого шаблона DataLife Engine 21.</p>
+    <div class="badges">
+      <span class="badge"><i>●</i> UniForm21</span>
+      <span class="badge"><i>●</i> DLE 21.x</span>
+      <span class="badge"><i>●</i> PHP 8.0-8.3</span>
+      <span class="badge"><i>●</i> Лицензия MIT</span>
+      <span class="badge"><i>●</i> 5 готовых форм</span>
+    </div>
+    <div class="hero-cta">
+      <a class="btn btn-yellow" href="#install">Установка за 5 шагов</a>
+      <a class="btn btn-ghost" href="#about">Подробнее о модуле</a>
+    </div>
+    <p style="margin-top:34px;font-size:14px;color:#8a9099;max-width:760px">Адаптация под DLE 21 / PHP 8.x: <b style="color:#e8eaee">The88788.com</b> (2026) - разработка сайтов, адаптация шаблонов, разработка модулей, администрирование серверов.</p>
+  </div>
+</section>
+
+<!-- ================= ЧТО ЭТО ================= -->
+<section class="dark" id="about">
+  <div class="container">
+    <div class="sec-head">
+      <div class="sec-kicker">Обзор</div>
+      <h2>Что такое UniForm</h2>
+      <p>UniForm21 - бесплатный модуль универсальных форм для DataLife Engine 21. Адаптация оригинального модуля UniForm (автор - <b style="color:#fff">Павел Белоусов (ПафНутиЙ)</b>, большое спасибо за разработку!) под актуальные версии DLE и PHP. Лицензия MIT.</p>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <span class="ico">📞</span>
+        <h3>callback</h3>
+        <p>Всплывающая форма «Заказать звонок»: телефон (обязательное), имя и удобное время звонка. Удобна для кнопки в шапке сайта.</p>
+      </div>
+      <div class="card">
+        <span class="ico">✉️</span>
+        <h3>feedback</h3>
+        <p>Форма обратной связи: e-mail и текст сообщения обязательны. Копия письма отправляется и посетителю (sendToSender).</p>
+      </div>
+      <div class="card">
+        <span class="ico">🛒</span>
+        <h3>buy</h3>
+        <p>Заказ товара: имя, телефон, e-mail и комментарий. Подходит для кнопки «Купить» на странице товара или услуги.</p>
+      </div>
+      <div class="card">
+        <span class="ico">📄</span>
+        <h3>inline</h3>
+        <p>Встроенная форма без попапа - выводится прямо в тексте любой страницы или статической страницы DLE.</p>
+      </div>
+      <div class="card">
+        <span class="ico">🗺️</span>
+        <h3>main</h3>
+        <p>Встроенная форма быстрого вопроса с e-mail - например, для блока контактов или карты на главной странице.</p>
+      </div>
+      <div class="card">
+        <span class="ico">⚡</span>
+        <h3>Как это работает</h3>
+        <p>Форма подгружается AJAX-запросом, отправляется без перезагрузки, ответ (ошибка или успех) заменяет содержимое формы. Письма уходят штатным механизмом почты DLE.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= УСТАНОВКА ================= -->
+<section class="light" id="install">
+  <div class="container">
+    <div class="sec-head">
+      <div class="sec-kicker">Установка</div>
+      <h2>Файлы модуля - что где лежит</h2>
+      <p>UniForm21 - standalone-дистрибутив: модуль не привязан к конкретному шаблону и подходит для любого шаблона DLE 21. Раскладка файлов такая:</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Путь</th><th>Назначение</th></tr></thead>
+        <tbody>
+          <tr><td><code>engine/ajax/uniform.php</code></td><td>Точка входа AJAX-контроллера модуля</td></tr>
+          <tr><td><code>engine/modules/uniform/uniform.php</code></td><td>Ядро: сборка формы, валидация, загрузка вложений</td></tr>
+          <tr><td><code>engine/modules/uniform/cfg.php</code></td><td>Разбор параметров из config.tpl</td></tr>
+          <tr><td><code>engine/modules/uniform/functions.php</code></td><td>Вспомогательные функции шаблонизатора форм</td></tr>
+          <tr><td><code>engine/modules/uniform/sendmail.php</code></td><td>Сборка и отправка писем (через почтовый класс DLE)</td></tr>
+          <tr><td><code>templates/{THEME}/uniform/</code></td><td>Шаблоны 5 форм + css и js модуля (копируется в папку вашего шаблона)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 style="font-size:20px;margin:40px 0 14px">Установка за 5 шагов</h3>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>
+          <h3>Скопируйте файлы движка</h3>
+          <p>Перенесите <code>engine/ajax/uniform.php</code> и папку <code>engine/modules/uniform/</code> из дистрибутива в корень сайта.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>
+          <h3>Скопируйте шаблоны форм</h3>
+          <p>Папку <code>uniform/</code> из <code>templates/{THEME}/</code> дистрибутива - в папку вашего шаблона: <code>templates/ВАШ_ШАБЛОН/uniform/</code>.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div>
+          <h3>Подключите CSS и JS в main.tpl</h3>
+          <p>В <code>&lt;head&gt;</code>:</p>
+          <pre>&lt;link href="<span class="y">{THEME}/uniform/css/uniform.css</span>" type="text/css" rel="stylesheet"&gt;</pre>
+          <p>Перед <code>&lt;/body&gt;</code> (после подключения jQuery движка):</p>
+          <pre>&lt;script src="<span class="y">{THEME}/uniform/js/jquery.ladda.min.js</span>"&gt;&lt;/script&gt;
+&lt;script src="<span class="y">{THEME}/uniform/js/jquery.form.min.js</span>"&gt;&lt;/script&gt;
+&lt;script src="<span class="y">{THEME}/uniform/js/jquery.magnificpopup.min.js</span>"&gt;&lt;/script&gt;
+&lt;script src="<span class="y">{THEME}/uniform/js/uniform.js</span>"&gt;&lt;/script&gt;</pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div>
+          <h3>Вставьте вызовы форм</h3>
+          <p>Примеры для попапа и встроенной формы - в разделе <a href="#usage" style="color:var(--yellow)">«Как вызвать форму»</a>.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div>
+          <h3>Укажите свои e-mail</h3>
+          <p>Во всех пяти <code>config.tpl</code> замените плейсхолдеры <code>emails = mail@mail.ru</code> на свои адреса.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="note note-warn">
+      <span class="n-ico">⚠️</span>
+      <div><b>Подключайте файлы только прямыми ссылками.</b> Минификатор <code>engine/classes/min</code> удалён из DLE 18+, поэтому старые примеры подключения из документации UniForm 2.0.0 (через пути минификатора) не работают - файлы будут отдавать 403. Используйте прямые ссылки <code>{THEME}/...</code>, как в шаге 3. Попапы работают на Magnific Popup, анимация кнопки отправки - на Ladda (обе библиотеки в комплекте).</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ВЫЗОВ ФОРМЫ ================= -->
+<section class="white" id="usage">
+  <div class="container">
+    <div class="sec-head">
+      <div class="sec-kicker">Использование</div>
+      <h2>Как вызвать форму</h2>
+      <p>Два режима: всплывающее окно по клику и встроенная форма, загружающаяся сразу при открытии страницы.</p>
+    </div>
+
+    <h3 style="font-size:20px;margin-bottom:10px">Попап (кнопка/ссылка)</h3>
+    <p style="font-size:15px;color:#585e66;max-width:820px">Любой элемент с атрибутом <code>data-uniform</code> открывает форму в модальном окне:</p>
+    <pre>&lt;span data-uniform=<span class="y">'{"formConfig": "callback"}'</span> class="uf-btn"&gt;Заказать звонок&lt;/span&gt;
+
+<span class="c">&lt;!-- кнопка покупки на странице товара --&gt;</span>
+&lt;button class="thm-btn yellow-bg" data-uniform=<span class="y">'{"formConfig": "buy"}'</span>&gt;Купить&lt;/button&gt;
+
+<span class="c">&lt;!-- дополнительные скрытые поля передаются прямо в JSON-объекте --&gt;</span>
+<span class="c">&lt;!-- их имена нужно разрешить параметром hidden в config.tpl --&gt;</span>
+&lt;span data-uniform=<span class="y">'{"formConfig": "feedback", "newsid": "{news-id}"}'</span>&gt;Написать автору&lt;/span&gt;</pre>
+
+    <h3 style="font-size:20px;margin:34px 0 10px">Встроенная (inline) форма</h3>
+    <p style="font-size:15px;color:#585e66;max-width:820px">Блок с атрибутом <code>data-uniform-inline</code> подгружает форму сразу при загрузке страницы - подходит для страниц «Контакты», «О компании» или блока карты на главной:</p>
+    <pre>&lt;div data-uniform-inline=<span class="y">'{"formConfig": "inline"}'</span>&gt;
+  &lt;div class="uf-inline-loading"&gt;&lt;/div&gt;
+&lt;/div&gt;</pre>
+
+    <div class="note note-tip">
+      <span class="n-ico">💡</span>
+      <div><b>Куда вставлять вызовы.</b> В любой <code>.tpl</code> вашего шаблона (например <code>main.tpl</code>, <code>fullstory.tpl</code>, <code>static.tpl</code>) или прямо в текст новости/статической страницы в режиме исходного кода. Классы кнопок (<code>uf-btn</code>, <code>thm-btn</code> и т.п.) - произвольные, стилизуйте под свой шаблон.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= СТРУКТУРА ================= -->
+<section class="dark2" id="structure">
+  <div class="container">
+    <div class="sec-head">
+      <div class="sec-kicker">Справочник</div>
+      <h2>Структура формы</h2>
+      <p>Каждая форма - отдельная папка внутри <code>templates/{THEME}/uniform/</code> из трёх файлов: <code>config.tpl</code> (настройки), <code>form.tpl</code> (вёрстка) и <code>email.tpl</code> (шаблон письма).</p>
+    </div>
+
+    <h3 style="font-size:20px;margin-bottom:14px">config.tpl - все параметры</h3>
+    <div class="table-wrap" style="margin-bottom:40px">
+      <table>
+        <thead><tr><th>Параметр</th><th>По умолчанию</th><th>Описание</th></tr></thead>
+        <tbody>
+          <tr><td><code>templateFolder</code></td><td>-</td><td>Подпапка формы в папке <code>uniform</code> текущего шаблона; там должны лежать config.tpl, form.tpl и email.tpl</td></tr>
+          <tr><td><code>nocache</code></td><td>false</td><td>Отключение кеширования модуля (<code>y</code> - выключить кеш)</td></tr>
+          <tr><td><code>debug</code></td><td>false</td><td>Режим отладки: в форме выводится блок <code>[debug]</code> со служебной информацией</td></tr>
+          <tr><td><code>required</code></td><td>false</td><td>Обязательные поля, через запятую: <code>required = phone, email</code></td></tr>
+          <tr><td><code>hidden</code></td><td>false</td><td>Разрешённые скрытые поля - передаются из JSON-объекта в data-атрибуте кнопки открытия формы (например <code>newsid, user</code>)</td></tr>
+          <tr><td><code>sendmail</code></td><td>false</td><td>Отправлять e-mail при заполнении формы (<code>y</code>)</td></tr>
+          <tr><td><code>emails</code></td><td>false</td><td>Адреса получателей уведомления, через запятую</td></tr>
+          <tr><td><code>selectFields</code></td><td>false</td><td>Поля типа select (чтобы модуль корректно обработал выбранное значение)</td></tr>
+          <tr><td><code>checkboxFields</code></td><td>false</td><td>Поля типа checkbox</td></tr>
+          <tr><td><code>radioFields</code></td><td>false</td><td>Поля типа radio</td></tr>
+          <tr><td><code>sendAsPlain</code></td><td>false</td><td>Отправлять сообщение как простой текст вместо HTML-письма</td></tr>
+          <tr><td><code>sendToAuthor</code></td><td>false</td><td>Отправить письмо автору новости: нужно скрытое поле <code>newsId</code>, и автор должен разрешить получение писем с сайта</td></tr>
+          <tr><td><code>sendToSender</code></td><td>false</td><td>Дублировать письмо на e-mail, указанный посетителем в поле <code>email</code></td></tr>
+          <tr><td><code>allowAttachments</code></td><td>false</td><td>Разрешить прикрепление файлов к письму</td></tr>
+          <tr><td><code>maxFileSize</code></td><td>false</td><td>Максимальный размер загружаемого файла в килобайтах</td></tr>
+          <tr><td><code>allowedFileTypes</code></td><td>false</td><td>Разрешённые типы файлов: расширения через запятую, без точек и пробелов (<code>jpg,png,pdf</code>)</td></tr>
+          <tr><td><code>parseSendMail</code></td><td>false</td><td>Свой PHP-файл обработки перед отправкой: укажите имя без расширения - модуль подключит <code>engine/modules/&lt;имя&gt;.php</code> вместо стандартной отправки</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 style="font-size:20px;margin-bottom:14px">form.tpl - теги шаблона</h3>
+    <div class="table-wrap" style="margin-bottom:26px">
+      <table>
+        <thead><tr><th>Тег</th><th>Описание</th></tr></thead>
+        <tbody>
+          <tr><td><code>[form] … [/form]</code></td><td>Блок с самой формой (показывается, пока заявка не отправлена)</td></tr>
+          <tr><td><code>[error] … [/error]</code></td><td>Блок ошибок - показывается при неудачной отправке</td></tr>
+          <tr><td><code>[success] … [/success]</code></td><td>Блок успешной отправки - заменяет форму</td></tr>
+          <tr><td><code>[debug]{debug}[/debug]</code></td><td>Отладочный вывод (работает при <code>debug = y</code>)</td></tr>
+          <tr><td><code>{uf_field_phone}</code></td><td>Значение поля <code>phone</code> - подставляет введённое посетителем (удобно для value при ошибках). Имя тега = имя поля</td></tr>
+          <tr><td><code>[uf_error_phone] … [/uf_error_phone]</code></td><td>Блок ошибки конкретного поля: внутри - текст ошибки или класс <code>uf-input-error</code> для подсветки инпута</td></tr>
+          <tr><td><code>[uf_token_error] … [/uf_token_error]</code></td><td>Ошибка сессии (неверный CSRF-токен)</td></tr>
+          <tr><td><code>[uf_select_calltime_anytime]selected[/uf_select_calltime_anytime]</code></td><td>Пометка выбранного option у select: <code>uf_select_&lt;поле&gt;_&lt;value&gt;</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <pre><span class="c">{* пример поля с подсветкой ошибки и сохранением введённого значения *}</span>
+&lt;input class="uf-input <span class="y">[uf_error_phone]uf-input-error[/uf_error_phone]</span>"
+       type="text" name="phone" value="<span class="y">{uf_field_phone}</span>"&gt;</pre>
+
+    <h3 style="font-size:20px;margin:34px 0 14px">email.tpl - шаблон письма</h3>
+    <p style="font-size:15px;color:#aab0b9;max-width:840px">Тема письма задаётся блоком <code>[header]…[/header]</code>, дальше - HTML-тело письма. Поля подставляются тегами <code>{phone}</code>, <code>{email}</code> и т.д. (имя тега = имя поля формы), а выбранные значения select - блоками вида <code>[uf_select_calltime="9-12"]с 9 до 12[/uf_select_calltime]</code>:</p>
+    <pre><span class="y">[header]</span>
+  Новый заказ звонка с сайта
+<span class="y">[/header]</span>
+&lt;h2&gt;Новый заказ звонка с сайта&lt;/h2&gt;
+&lt;b&gt;Телефон:&lt;/b&gt; &lt;a href="tel:<span class="y">{phone}</span>"&gt;<span class="y">{phone}</span>&lt;/a&gt;&lt;br&gt;
+&lt;b&gt;Когда звонить:&lt;/b&gt;
+<span class="y">[uf_select_calltime="9-12"]</span>с 9:00 до 12:00<span class="y">[/uf_select_calltime]</span></pre>
+
+    <h3 style="font-size:20px;margin:34px 0 14px">Настройки пяти готовых форм</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Форма</th><th>Обязательные поля</th><th>Особенности config.tpl</th></tr></thead>
+        <tbody>
+          <tr><td><code>callback</code></td><td><code>phone</code></td><td><code>selectFields = calltime</code>, отправка почты включена</td></tr>
+          <tr><td><code>feedback</code></td><td><code>textarea, email</code></td><td>Копия письма посетителю (<code>sendToSender = y</code>)</td></tr>
+          <tr><td><code>buy</code></td><td><code>email, name</code></td><td>Копия письма покупателю (<code>sendToSender = y</code>)</td></tr>
+          <tr><td><code>inline</code></td><td><code>email</code></td><td>Встроенная форма для любой страницы (без попапа)</td></tr>
+          <tr><td><code>main</code></td><td><code>email</code></td><td>Встроенная форма быстрого вопроса (например, для главной)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ================= СВОЯ ФОРМА ================= -->
+<section class="light" id="custom">
+  <div class="container">
+    <div class="sec-head">
+      <div class="sec-kicker">Кастомизация</div>
+      <h2>Как создать свою форму</h2>
+      <p>Новая форма делается копированием существующей - например, формы <code>callback</code>.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>
+          <h3>Скопируйте папку формы</h3>
+          <p>Создайте копию папки <code>templates/{THEME}/uniform/callback/</code> с новым именем, например <code>uniform/order/</code>. Внутри должны остаться <code>config.tpl</code>, <code>form.tpl</code>, <code>email.tpl</code>.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>
+          <h3>Настройте config.tpl</h3>
+          <p>Поменяйте <code>templateFolder = order</code> (имя новой папки), перечислите обязательные поля в <code>required</code> и свои адреса в <code>emails</code>.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div>
+          <h3>Отредактируйте form.tpl и email.tpl</h3>
+          <p>Добавьте свои поля. Для каждого поля с <code>name="имя"</code> доступны теги <code>{uf_field_имя}</code> и <code>[uf_error_имя]</code> в форме и <code>{имя}</code> в письме.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div>
+          <h3>Вставьте вызов на сайт</h3>
+          <p>Попап: <code>&lt;span data-uniform='{"formConfig": "order"}'&gt;Открыть&lt;/span&gt;</code> - в любой tpl шаблона или прямо в текст новости/статической страницы (в режиме исходного кода).</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="note note-warn">
+      <span class="n-ico">⚠️</span>
+      <div><b>Обязательно замените адреса почты!</b> Во всех пяти config.tpl сейчас стоят плейсхолдеры <code>emails = mail@mail.ru</code> (в feedback, buy, inline и main - ещё и <code>mail2@mail.ru</code>). Пока не впишете свои адреса, заявки будут уходить в никуда.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= СОВМЕСТИМОСТЬ ================= -->
+<section class="white" id="compat">
+  <div class="container">
+    <div class="sec-head">
+      <div class="sec-kicker">Технические детали</div>
+      <h2>Совместимость с DLE 21 и PHP 8.x</h2>
+      <p>Модуль адаптирован под DataLife Engine 21.0: убраны удалённые из движка функции, добавлены проверки для PHP 8, AJAX переключён на актуальную точку входа.</p>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <span class="ico">🚪</span>
+        <h3>Точка входа AJAX</h3>
+        <p>Рабочий URL модуля: <code>/index.php?controller=ajax&amp;mod=uniform&amp;formConfig=&lt;имя&gt;</code>. В DLE 21 весь AJAX идёт через <code>index.php?controller=ajax</code> - js модуля уже настроен на него.</p>
+      </div>
+      <div class="card">
+        <span class="ico">🛡️</span>
+        <h3>403 на прямой вызов - это нормально</h3>
+        <p>Прямое обращение к <code>/engine/ajax/uniform.php</code> всегда отдаёт 403 «Hacking attempt!» - штатная защита модуля от вызова вне движка. Это не ошибка и не признак поломки.</p>
+      </div>
+      <div class="card">
+        <span class="ico">🔐</span>
+        <h3>Защита</h3>
+        <p>CSRF-токен в каждой форме (ошибка сессии - блок <code>[uf_token_error]</code>), проверка IP по бан-листу DLE, санитизация имени формы, фильтрация текста штатным парсером DLE.</p>
+      </div>
+      <div class="card">
+        <span class="ico">📨</span>
+        <h3>Отправка почты</h3>
+        <p>Письма отправляются штатным почтовым классом DLE с настройками из админпанели. На локальном сервере без SMTP письмо может не уйти - сама форма при этом отработает корректно.</p>
+      </div>
+    </div>
+    <div class="note note-tip">
+      <span class="n-ico">💡</span>
+      <div><b>Отладка.</b> Если форма ведёт себя неожиданно, раскомментируйте <code>debug = y</code> и <code>nocache = y</code> в её config.tpl - увидите блок <code>[debug]</code> с параметрами и исключите влияние кеша. Не забудьте выключить после настройки.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= NEXT ================= -->
+<section class="dark2">
+  <div class="container" style="text-align:center">
+    <h2 style="font-size:clamp(22px,3vw,30px);margin-bottom:14px">Что изменено по сравнению с UniForm 2.0.0</h2>
+    <p style="color:#aab0b9;max-width:720px;margin:0 auto 30px">Убрана удалённая из DLE 21 функция <code>convert_unicode()</code>, устаревшие вызовы допполей заменены на <code>DLEUserXFields</code>, добавлены isset-проверки для PHP 8, исправлена автозагрузка ParseFilter/HTMLPurifier, AJAX переключён на <code>index.php?controller=ajax</code>. Полный список правок - в README.md дистрибутива.</p>
+    <a class="btn btn-yellow" href="#install">К установке →</a>
+  </div>
+</section>
+
+<!-- ================= HOSTING ================= -->
+<section class="dark" id="hosting">
+  <div class="container">
+    <div class="sec-head">
+      <div class="sec-kicker">Рекомендуем</div>
+      <h2>Хостинг для сайта на DLE</h2>
+      <p>Недорогой и быстрый VPS для DataLife Engine - проверено на своих проектах: этот сайт-демо и модуль тестировались именно в такой связке.</p>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <span class="ico">⚡</span>
+        <h3>VPS от $2.4 в месяц</h3>
+        <p>1 vCPU, 1 GB RAM, 10 GB SSD - полноценный KVM-сервер с root-доступом за цену чашки кофе. У большинства провайдеров такие же ресурсы стоят $4-6.</p>
+      </div>
+      <div class="card">
+        <span class="ico">🌍</span>
+        <h3>10 локаций, цена одна</h3>
+        <p>Швеция, Нидерланды, Франция, Германия, Польша, Финляндия, Латвия, Эстония, Великобритания, США - тариф не зависит от площадки.</p>
+      </div>
+      <div class="card">
+        <span class="ico">🚀</span>
+        <h3>Быстрый старт</h3>
+        <p>Сервер готов меньше чем за минуту. NVMe-диски Intel/Samsung, канал 200 Mbps, безлимитный трафик, любая ОС, масштабирование в пару кликов, uptime 99.8%.</p>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:36px">
+      <a class="btn btn-yellow" href="https://hip.hosting/?code=1b890e361ec6ae343e57" target="_blank" rel="noopener">Забрать VPS за $2.4 на hip.hosting →</a>
+      <p style="color:#8a9099;font-size:13px;margin-top:14px">Такого сервера хватает для сайта на DLE с посещаемостью в десятки тысяч хитов в сутки.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <h3>UniForm21 - универсальные AJAX-формы для DLE 21</h3>
+    <p>Оригинальный модуль UniForm разработан Павлом Белоусовым (ПафНутиЙ), большое спасибо автору за разработку! Лицензия MIT. Адаптация под DataLife Engine 21.x и PHP 8.x - <a href="https://the88788.com" target="_blank" rel="noopener">The88788.com</a> (2026): разработка сайтов, адаптация шаблонов, разработка модулей, администрирование серверов.</p>
+    <div class="foot-links">
+      <a class="btn btn-ghost" href="https://hip.hosting/?code=1b890e361ec6ae343e57" target="_blank" rel="noopener">Хостинг от $2.4/мес</a>
+      <a class="btn btn-ghost" href="https://the88788.com" target="_blank" rel="noopener">The88788.com</a>
+    </div>
+    <div class="copy">UniForm21 Docs · открывается локально, без внешних зависимостей (кроме Google Fonts) · Лицензия MIT</div>
+  </div>
+</footer>
+
+</body>
+</html>
