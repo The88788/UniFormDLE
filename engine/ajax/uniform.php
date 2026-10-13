@@ -5,6 +5,7 @@
  * @author     pafnuty <pafnuty10@gmail.com>
  * @link       http://pafnuty.name/
  * @link       https://twitter.com/pafnuty_name
+ * @version     2.1.0
  * @adapted    Adapted for DLE 21 / PHP 8.x by The88788.com (2026)
  */
 
@@ -75,7 +76,7 @@ if (!$config['allow_registration']) {
 $template_dir = ROOT_DIR.'/templates/'.$config['skin'];
 
 // Санитизация имени конфига формы (только буквы, цифры, _, -)
-$formConfig = isset($_REQUEST['formConfig']) ? preg_replace("/[^a-z0-9_\-]+/mi", '', (string)$_REQUEST['formConfig']) : '';
+$formConfig = isset($_REQUEST['formConfig']) && is_string($_REQUEST['formConfig']) ? preg_replace("/[^a-z0-9_\-]+/mi", '', $_REQUEST['formConfig']) : '';
 $_REQUEST['formConfig'] = $formConfig;
 
 // Пытаемся получить даные из шаблона с настройками
@@ -84,10 +85,8 @@ if ($formConfig !== '' && file_exists($template_dir.'/uniform/'.$formConfig.'/co
 	$preset = file_get_contents($template_dir.'/uniform/'.$formConfig.'/config.tpl');
 	$arConf = [];
 } else {
-	echo '<pre class="dle-pre">';
-	print_r($template_dir);
-	echo '</pre>';
-	die('config file not found');
+	http_response_code(404);
+	die('Форма не найдена');
 }
 // Разбиваем полученные из файла нестройки по строкам
 $preset = explode("\n", $preset);

@@ -1,4 +1,10 @@
-# Универсальные AJAX-формы для DataLife Engine 21.x
+# UniForm21 2.1.0
+
+Версия адаптации: **2.1.0**, 13 октября 2026. [Changelog](CHANGELOG.md). Номер установленного модуля: `engine/modules/uniform/VERSION`.
+
+Добавлен локальный [лимит частоты заявок](docs/RATE_LIMIT_2026-10-13.md). Архив релиза пересобран с этими изменениями.
+
+Обновление безопасности от13октября2026: [изменения, установка и ограничения](docs/SECURITY_UPDATE_2026-10-13.md). Код согласован с установленными локальными копиями. [Описание релиза 2.1.0](RELEASE_NOTES_2.1.0.md).
 
 ![UniForm21 - универсальные AJAX-формы для DLE 21](https://repository-images.githubusercontent.com/34575838/70601780-87ca-11e9-88b2-24e1c100cb13)
 
@@ -31,7 +37,7 @@
 templates/ВАШ_ШАБЛОН/uniform/
 ```
 
-Внутри - 5 форм (`callback`, `feedback`, `buy`, `inline`, `main`) и папки `css/` и `js/`.
+Внутри - 6 форм (`callback`, `feedback`, `buy`, `inline`, `main`, `service`) и папки `css/` и `js/`.
 
 ### Шаг 3. Подключение CSS и JS в main.tpl
 
@@ -49,7 +55,7 @@ templates/ВАШ_ШАБЛОН/uniform/
 <script src="{THEME}/uniform/js/jquery.ladda.min.js"></script>
 <script src="{THEME}/uniform/js/jquery.form.min.js"></script>
 <script src="{THEME}/uniform/js/jquery.magnificpopup.min.js"></script>
-<script src="{THEME}/uniform/js/uniform.js"></script>
+<script src="{THEME}/uniform/js/uniform.js?v=2.1.0"></script>
 ```
 
 ### Шаг 4. Вызов форм
@@ -77,7 +83,7 @@ templates/ВАШ_ШАБЛОН/uniform/
 
 ### Шаг 5. Укажите свои e-mail
 
-⚠️ **Обязательно!** Во всех пяти `config.tpl` стоят плейсхолдеры `emails = mail@mail.ru` (в feedback, buy, inline и main - ещё и `mail2@mail.ru`). Замените их на свои адреса, иначе заявки будут уходить в никуда.
+⚠️ **Обязательно!** В пяти исходных `config.tpl` стоят плейсхолдеры `emails = mail@mail.ru` (в feedback, buy, inline и main - ещё и `mail2@mail.ru`). В service/config.tpl указан owner@example.invalid. Замените все примеры на свои адреса перед использованием.
 
 ## Готовые формы в комплекте
 
@@ -86,8 +92,9 @@ templates/ВАШ_ШАБЛОН/uniform/
 | `callback` | Всплывающая форма «Заказать звонок» (телефон, имя, удобное время) | `phone` |
 | `feedback` | Обратная связь, копия письма посетителю (`sendToSender`) | `textarea`, `email` |
 | `buy` | Заказ товара (имя, телефон, e-mail, комментарий) | `email`, `name` |
-| `inline` | Встроенная форма без попапа для любой страницы | `email` |
-| `main` | Встроенная форма быстрого вопроса (например, для главной) | `email` |
+| `inline` | Встроенная форма без попапа для любой страницы | `name`, `phone`, `email`, `textarea` |
+| `main` | Встроенная форма быстрого вопроса (например, для главной) | `name`, `phone`, `email`, `textarea` |
+| `service` | Заявка на услугу с контекстом и вложениями | `textarea`, `email` |
 
 Новая форма создаётся копированием любой из папок (`config.tpl` + `form.tpl` + `email.tpl`), сменой `templateFolder` в конфиге и вызовом по новому имени.
 
@@ -117,6 +124,8 @@ templates/ВАШ_ШАБЛОН/uniform/
 - Быстрые NVMe-диски Intel/Samsung, канал 200 Mbps, безлимитный трафик
 - Сервер готов меньше чем за минуту, любая ОС, масштабирование в пару кликов
 - Uptime 99.8% - сайт работает круглосуточно
+
+Такого VPS хватает для сайта на DLE с посещаемостью в десятки тысяч хитов в сутки. Для UniForm21 и любого сайта на DLE 21 - самое то.
 
 **[Зарегистрироваться и забрать сервер за $2.4 →](https://hip.hosting/?code=1b890e361ec6ae343e57)**
 

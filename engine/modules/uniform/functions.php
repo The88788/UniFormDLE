@@ -5,6 +5,7 @@
  * @author     pafnuty <pafnuty10@gmail.com>
  * @link       http://pafnuty.name/
  * @link       https://twitter.com/pafnuty_name
+ * @version     2.1.0
  * @adapted    Adapted for DLE 21 / PHP 8.x by The88788.com (2026)
  */
 
@@ -33,14 +34,21 @@ function getArray($string, $delimiter = ',') {
 }
 
 /**
- * Получение зашифрованного CSRF-токена
+ * Получение случайного CSRF-токена формы из активной сессии
  *
  * @param  string  $string  Токен
  *
- * @return string         Зашифрованный токен
+ * @return string         Случайный токен
  */
 function getToken($string) {
-	return base64_encode($string);
+	if (session_status() !== PHP_SESSION_ACTIVE) {
+		throw new RuntimeException('UniForm requires an active session');
+	}
+	$key = hash('sha256', $string);
+	if (!isset($_SESSION['uniform_csrf'][$key])) {
+		$_SESSION['uniform_csrf'][$key] = bin2hex(random_bytes(32));
+	}
+	return $_SESSION['uniform_csrf'][$key];
 }
 
 /**
@@ -52,11 +60,10 @@ function getToken($string) {
  * @return bool           true|false
  */
 function checkToken($first, $second) {
-	if (getToken($second) == $first) {
-		return true;
-	}
-
-	return false;
+	$key = hash('sha256', $second);
+	$expected = $_SESSION['uniform_csrf'][$key] ?? null;
+	return session_status() === PHP_SESSION_ACTIVE && is_string($first)
+		&& is_string($expected) && hash_equals($expected, $first);
 }
 
 /**
@@ -67,9 +74,95 @@ function checkToken($first, $second) {
  * @return bool          true|false
  */
 function validEmain($email) {
-	$re = "/(.+)@(.+)\\.(.+)/i";
+	return is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
+}
 
-	return preg_match($re, $email, $matches);
+/** HTML text and attribute values; never use SQL escaping for output. */
+function uniformEscape($value) {
+	return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+}
+
+/** Atomic per-IP reservations shared by all forms and sessions of this installation.
+ * State contains timestamps only, outside the document root. Invalid/unavailable
+ * storage fails closed; callers must never report successful mail in that case.
+ */
+function uniformRateLimit($phase, $limit, $window, $interval = 0, $now = null) {
+	$denied = ['allowed' => false, 'retry' => 60, 'storage' => true];
+	$ip = $_SERVER['REMOTE_ADDR'] ?? '';
+	if (!is_string($ip) || !filter_var($ip, FILTER_VALIDATE_IP)
+		|| !in_array($phase, ['requests', 'submissions'], true)) return $denied;
+	$now = $now ?? time();
+	$directory = rtrim(sys_get_temp_dir(), '/\\') . '/dle-uniform-' . substr(hash('sha256', realpath(ENGINE_DIR) ?: ENGINE_DIR), 0, 24);
+	if (!is_dir($directory) && !@mkdir($directory, 0700, true) && !is_dir($directory)) return $denied;
+	$secret = defined('SECURE_AUTH_KEY') ? SECURE_AUTH_KEY : hash('sha256', ENGINE_DIR);
+	$key = hash_hmac('sha256', $ip, $secret);
+	$file = $directory . '/' . $key . '.json';
+	$handle = @fopen($file, 'c+');
+	if (!$handle) return $denied;
+	@chmod($file, 0600);
+	if (!flock($handle, LOCK_EX | LOCK_NB)) { fclose($handle); return $denied; }
+	try {
+		$raw = stream_get_contents($handle);
+		$state = $raw === '' ? [] : json_decode($raw, true);
+		if (!is_array($state) || strlen($raw) > 65536) return $denied;
+		foreach (['requests', 'submissions'] as $bucket) {
+			if (isset($state[$bucket]) && !is_array($state[$bucket])) return $denied;
+			$state[$bucket] = array_slice(array_values(array_filter($state[$bucket] ?? [], static function ($stamp) use ($now, $bucket, $phase, $window, $interval) {
+				$age = $bucket === $phase ? max($window, $interval) : 3600;
+				return is_int($stamp) && $stamp > $now - $age && $stamp <= $now;
+			})), -1000);
+		}
+		$times = $state[$phase];
+		$recent = array_values(array_filter($times, static function ($stamp) use ($now, $window) { return $stamp > $now - $window; }));
+		$retry = count($recent) >= $limit ? max(1, $recent[0] + $window - $now) : 0;
+		if ($times && $interval > 0) $retry = max($retry, end($times) + $interval - $now);
+		if ($retry > 0) return ['allowed' => false, 'retry' => $retry, 'storage' => false];
+		$state[$phase][] = $now;
+		$json = json_encode($state);
+		if (!is_string($json) || !rewind($handle) || !ftruncate($handle, 0)
+			|| fwrite($handle, $json) !== strlen($json) || !fflush($handle)) return $denied;
+		return ['allowed' => true, 'retry' => 0, 'storage' => false];
+	} finally { flock($handle, LOCK_UN); fclose($handle); }
+}
+
+function uniformRateMessage($result) {
+	return $result['storage'] ? 'Отправка временно недоступна. Повторите попытку позже.'
+		: 'Слишком много попыток отправки. Повторите через ' . (int)$result['retry'] . ' сек.';
+}
+
+/** Validate a PHP upload before handing its temporary path to the mailer. */
+function uniformValidAttachment($file, $allowedTypes, $maxBytes) {
+	if (!is_array($file) || !isset($file['name'], $file['tmp_name'], $file['error'])
+		|| !is_string($file['name']) || !is_string($file['tmp_name'])
+		|| (int)$file['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name'])) {
+		return false;
+	}
+	$size = filesize($file['tmp_name']);
+	if ($size === false || $size <= 0 || $size > $maxBytes) return false;
+	$extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+	$mimeTypes = [
+		'jpg' => ['image/jpeg'], 'jpeg' => ['image/jpeg'], 'png' => ['image/png'],
+		'gif' => ['image/gif'], 'webp' => ['image/webp'], 'pdf' => ['application/pdf'],
+		'txt' => ['text/plain'], 'zip' => ['application/zip', 'application/x-zip-compressed'],
+		'doc' => ['application/msword', 'application/x-ole-storage', 'application/CDFV2'],
+		'docx' => ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/zip'],
+	];
+	if (!in_array($extension, $allowedTypes, true) || !isset($mimeTypes[$extension]) || !class_exists('finfo')) return false;
+	$mime = (new finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']);
+	if (!in_array($mime, $mimeTypes[$extension], true)) return false;
+	if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
+		$image = @getimagesize($file['tmp_name']);
+		if (!$image || ($image['mime'] ?? '') !== $mime) return false;
+	}
+	if ($extension === 'docx') {
+		if (!class_exists('ZipArchive')) return false;
+		$zip = new ZipArchive();
+		if ($zip->open($file['tmp_name']) !== true) return false;
+		$valid = $zip->locateName('[Content_Types].xml') !== false && $zip->locateName('word/document.xml') !== false;
+		$zip->close();
+		if (!$valid) return false;
+	}
+	return true;
 }
 
 /**
@@ -81,13 +174,12 @@ function validEmain($email) {
  * @return string Поля, добавляемые в форму
  */
 function addHiddenFields($arFields = [], $requestArray = []) {
-	global $db;
 	$hiddenInputs = '';
 	if (count($arFields) > 0 && is_array($requestArray)) {
 		foreach ($arFields as $field) {
-			if (array_key_exists($field, $requestArray)) {
-				// @TODO - проработать вопрос безопасности такой конструкции.
-				$hiddenInputs .= '<input type="hidden" name="'.$field.'" value="'.$db->safesql($requestArray[$field])
+			if (array_key_exists($field, $requestArray) && is_scalar($requestArray[$field])) {
+				// Значение выводится в HTML-атрибут, а не в SQL-запрос.
+				$hiddenInputs .= '<input type="hidden" name="'.htmlspecialchars($field, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8').'" value="'.htmlspecialchars((string)$requestArray[$field], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
 					.'">';
 				$hiddenInputs .= "\n";
 			}

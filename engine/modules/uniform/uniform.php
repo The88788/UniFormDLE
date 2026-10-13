@@ -5,6 +5,7 @@
  * @author     pafnuty <pafnuty10@gmail.com>
  * @link       http://pafnuty.name/
  * @link       https://twitter.com/pafnuty_name
+ * @version     2.1.0
  * @adapted    Adapted for DLE 21 / PHP 8.x by The88788.com (2026)
  */
 
@@ -32,7 +33,7 @@ include (DLEPlugins::Check(ENGINE_DIR . '/modules/uniform/functions.php'));
 
 // Имя кеша
 /** @var array $cfg */
-$cacheName = md5(implode('_', $cfg));
+$cacheName = md5('security-v2_' . implode('_', $cfg));
 // ID сессии
 $sessionId = session_id();
 
@@ -40,12 +41,24 @@ $uniform      = false;
 $hiddenInputs = '';
 // Если данные передаются постом — "запомним" это.
 $isPost = ($_SERVER['REQUEST_METHOD'] === 'POST') ? true : false;
+$rateError = '';
+$rateRetry = 0;
+if ($isPost) {
+	$rate = uniformRateLimit('requests', $cfg['rateLimitRequests'], $cfg['rateLimitRequestWindow']);
+	if (!$rate['allowed']) {
+		$rateError = uniformRateMessage($rate);
+		$rateRetry = $rate['retry'];
+	}
+}
 
 // Определяемся с шаблоном сайта
 // Проверим куку пользователя и налочие параметра skin в реквесте.
 $currentSiteSkin = (isset($_COOKIE['dle_skin'])) ? trim(totranslit($_COOKIE['dle_skin'], false, false)) : ((isset($_REQUEST['skin'])) ? trim(totranslit($_REQUEST['skin'], false, false)) : $config['skin']);
 
 $config['skin'] = ($currentSiteSkin == '') ? $config['skin'] : $currentSiteSkin;
+
+// Personalised forms must never use the shared guest cache.
+if (!empty($is_logged)) $cfg['nocache'] = true;
 
 if (!$cfg['nocache'] && !$isPost) {
 	// Проверим кеш, если это требуется
@@ -68,7 +81,7 @@ if (!$uniform) {
 		$arHidden = getArray($cfg['hidden']);
 
 		// Дебаг
-		$debug    = ($cfg['debug']) ? true : false;
+		$debug    = false; // Never expose config or submitted data in public forms.
 		$debugTag = '';
 		if ($debug) {
 			$tpl->set('[debug]', '');
@@ -135,6 +148,37 @@ if (!$uniform) {
 
 			// Получаем массив обязательных полей
 			$arRequired = getArray($cfg['required']);
+			// Missing keys must fail exactly like empty submitted fields.
+			// jquery.form serializes an unselected file input as attachments[]="".
+			// Only discard empty placeholders; never accept paths/content from POST.
+			if (isset($_POST['attachments'])) {
+				$placeholder = $_POST['attachments'];
+				if ($placeholder === '' || (is_array($placeholder) && count($placeholder) <= 10
+					&& count(array_filter($placeholder, static function ($value) { return !is_string($value) || $value !== ''; })) === 0)) {
+					unset($_POST['attachments']);
+				}
+			}
+			foreach ($arRequired as $requiredField) {
+				if (!array_key_exists($requiredField, $_POST)) $_POST[$requiredField] = '';
+			}
+			foreach ($_POST as $field => $value) {
+				if (!preg_match('/^[a-zA-Z0-9_]+$/D', $field)) {
+					$error = true;
+					unset($_POST[$field]);
+					continue;
+				}
+				if (is_array($value)) {
+					$arrayFields = array_merge(getArray($cfg['selectFields']), getArray($cfg['checkboxFields']), getArray($cfg['radioFields']));
+					if (!in_array($field, $arrayFields, true) || count($value) > 100 || count(array_filter($value, 'is_string')) !== count($value)) {
+						$error = true;
+						$_POST[$field] = '';
+					} else {
+						$_POST[$field] = array_map('trim', $value);
+					}
+				}
+			}
+			$post = $mailPost = $_POST;
+			unset($post['csrfToken'], $post['formConfig'], $mailPost['csrfToken'], $mailPost['formConfig']);
 
 			// Получаем массив, содержащий поля-селекты
 			$arSelectFields = getArray($cfg['selectFields']);
@@ -162,12 +206,16 @@ if (!$uniform) {
 				}
 				// Остальные поля надо бы обработать
 				if (!is_array($val)) {
+					if (strlen((string)$val) > 20000) {
+						$error = true;
+						$val = '';
+					}
 					// DLE 21 работает только в UTF-8, convert_unicode() удалена из движка
 					$val            = $parse->process(trim($val));
 					$arSendMail[$k] = $val;
 				}
 
-				if (in_array($k, $arRequired) && ($val == '' || !isset($val))) {
+				if (in_array($k, $arRequired) && ($val === '' || (is_array($val) && !count(array_filter($val, static function ($item) { return trim($item) !== ''; }))))) {
 					// Если поле обязательное, но значение не установлено — значит произошла ошибка заполнения формы
 					$error = true;
 					// Показываем то, что заключено в теги ошибок.
@@ -207,7 +255,7 @@ if (!$uniform) {
 				}
 
 				// Заполняем поля нужными данными
-				$tpl->copy_template = str_replace("{uf_field_{$k}}", is_array($val) ? implode(', ', $val) : $val, $tpl->copy_template);
+				$tpl->copy_template = str_replace("{uf_field_{$k}}", uniformEscape(is_array($val) ? implode(', ', $val) : $val), $tpl->copy_template);
 			}
 
 			// Массив для прикрепленных файлов
@@ -217,68 +265,63 @@ if (!$uniform) {
 			// Массив с разрешенными типами файлов
 			$arAllowedTypes = getArray($cfg['allowedFileTypes']);
 
-			// Проверяем вложения
-			if (isset($_FILES) && $cfg['allowAttachments']) {
-				foreach ($_FILES as $fileItem) {
-
-					if (is_array($fileItem['name'])) {
-						// Если массив — пробежимся по нему.
-						foreach ($fileItem['name'] as $i => $f) {
-							// Определяем тип файла
-							$ext = (new SplFileInfo($fileItem['name'][$i]))->getExtension();
-
-							// Если тип файла не в списке — идём дальше
-							if (count($arAllowedTypes) && !in_array($ext, $arAllowedTypes)) {
-								$arNotAttachedFiles[] = $fileItem['name'][$i];
-								continue;
-							}
-
-							// Если есть ошибки — добавим в список имя ошибочного файла
-							if ($fileItem['error'][$i] > 0) {
-								$arNotAttachedFiles[] = $fileItem['name'][$i];
-							} else {
-								// Если ошибок не — можно отправлять такой файл
-								$arSendAttachments[] = [
-									'tmp_name' => $fileItem['tmp_name'][$i],
-									'name'     => $fileItem['name'][$i]
-								];
-							}
-						}
-
-					} else {
-						// Определяем тип файла
-						$ext = (new SplFileInfo($fileItem['name']))->getExtension();
-						// Если тип файла не в списке — идём дальше
-						if (count($arAllowedTypes) && !in_array($ext, $arAllowedTypes)) {
-							$arNotAttachedFiles[] = $fileItem['name'];
-						} else {
-							// Если есть ошибки — добавим в список имя ошибочного файла
-							if ($fileItem['error'] > 0) {
-								$arNotAttachedFiles[] = $fileItem['name'];
-							} else {
-								// Если ошибок не — можно отправлять такой файл
-								$arSendAttachments[] = [
-									'tmp_name' => $fileItem['tmp_name'],
-									'name'     => $fileItem['name']
-								];
-							}
-						}
-
+			// Validate the real uploaded file, independently of MAX_FILE_SIZE.
+			$arAllowedTypes = array_map('strtolower', $arAllowedTypes);
+			$attachmentLimit = (int)$cfg['maxFileSize'] > 0 ? (int)$cfg['maxFileSize'] * 1024 : 5 * 1024 * 1024;
+			$totalAttachmentBytes = 0;
+			$attachmentCount = 0;
+			foreach ($_FILES as $fileItem) {
+				if (!is_array($fileItem) || !isset($fileItem['name'], $fileItem['error'], $fileItem['tmp_name'])) {
+					$arNotAttachedFiles[] = 'Некорректное вложение';
+					continue;
+				}
+				$indexes = is_array($fileItem['name']) ? array_keys($fileItem['name']) : [null];
+				foreach ($indexes as $i) {
+					$file = $i === null ? $fileItem : [
+						'name' => $fileItem['name'][$i] ?? null,
+						'tmp_name' => $fileItem['tmp_name'][$i] ?? null,
+						'error' => $fileItem['error'][$i] ?? null,
+					];
+					if (isset($file['error']) && !is_array($file['error']) && (int)$file['error'] === UPLOAD_ERR_NO_FILE) continue;
+					$attachmentCount++;
+					$name = is_string($file['name'] ?? null) ? basename(str_replace('\\', '/', $file['name'])) : 'Некорректное вложение';
+					if (!$cfg['allowAttachments'] || $attachmentCount > 10
+						|| !uniformValidAttachment($file, $arAllowedTypes, $attachmentLimit)) {
+						$arNotAttachedFiles[] = $name;
+						continue;
 					}
+					$totalAttachmentBytes += filesize($file['tmp_name']);
+					if ($totalAttachmentBytes > 20 * 1024 * 1024) {
+						$arNotAttachedFiles[] = $name;
+						continue;
+					}
+					$arSendAttachments[] = ['tmp_name' => $file['tmp_name'], 'name' => preg_replace('/[\x00-\x1F\x7F]/', '', $name)];
 				}
 			}
 
 			$arSendMail['not_attached_files'] = implode(', ', $arNotAttachedFiles);
 
 			if (count($arNotAttachedFiles)) {
+				$error = true;
 				$tpl->set('[attachments_error]', '');
 				$tpl->set('[/attachments_error]', '');
-				$tpl->set('{not_attached_files}', $arSendMail['not_attached_files']);
+				$tpl->set('{not_attached_files}', uniformEscape($arSendMail['not_attached_files']));
 			} else {
 				$tpl->set('{not_attached_files}', '');
 				$tpl->set_block("'\\[attachments_error\\](.*?)\\[/attachments_error\\]'si", '');
 			}
 
+			if ($error == false && $rateError === '') {
+				$rate = uniformRateLimit('submissions', $cfg['rateLimitSubmissions'], $cfg['rateLimitSubmissionWindow'], $cfg['rateLimitInterval']);
+				if (!$rate['allowed']) {
+					$rateError = uniformRateMessage($rate);
+					$rateRetry = $rate['retry'];
+				}
+			}
+			if ($rateError !== '') {
+				if (!$error) $tpl->set_block("'\\[error\\](.*?)\\[/error\\]'si", '');
+				$error = true;
+			}
 			if ($error == false) {
 
 				// Если нет ошибок — значит форма отправлена удачно, нужно об этом сообщить
@@ -328,7 +371,7 @@ if (!$uniform) {
 
 			// Если пользователь авторизован — подставим его email в поле email.
 			if ($member_id['user_group'] !== 5) {
-				$tpl->copy_template = str_replace('{uf_field_email}', $member_id['email'], $tpl->copy_template);
+				$tpl->copy_template = str_replace('{uf_field_email}', uniformEscape($member_id['email']), $tpl->copy_template);
 			}
 			$tpl->copy_template = preg_replace("'\\{uf_field_(.*?)\\}'si", '', $tpl->copy_template);
 			$tpl->copy_template = preg_replace("'\\[uf_error_(.*?)\\](.*?)\\[/uf_error_(.*?)\\]'is", '', $tpl->copy_template);
@@ -363,11 +406,16 @@ if (!$uniform) {
 		}
 		$tpl->clear();
 	} else {
-		$uniform = '<b style="color:red">Отсутствует файл шаблона: ' . $config['skin'] . '/uniform/' . $cfg['templateFolder'] . '/form.tpl</b>';
+		http_response_code(404);
+		$uniform = 'Форма временно недоступна';
 	}
 }
 // Добавляем спцальный атрибут для корректной загрузки файлов
 $multipart = ($cfg['allowAttachments']) ? 'enctype="multipart/form-data"' : '';
+
+// Per-request fields are not part of the shared cached form body.
+$requestFields = $isPost ? $_POST : (isset($_REQUEST['fields']) && is_array($_REQUEST['fields']) ? $_REQUEST['fields'] : []);
+$hiddenInputs = addHiddenFields(getArray($cfg['hidden']), $requestFields);
 
 // Добавляем инпут с указанием максимально возможного веса файла
 $cfg['maxFileSize'] = (int)$cfg['maxFileSize'];
@@ -382,6 +430,10 @@ $form = '
 ';
 $form .= ($cfg['allowAttachments'] && $maxFileSize > 0) ? '<input type="hidden" name="MAX_FILE_SIZE" value="' . $maxFileSize * 1024 . '" />' : '';
 $form .= $hiddenInputs;
+if ($rateError !== '') {
+	header('Retry-After: ' . (int)$rateRetry);
+	$form .= '<div class="uf-alert uf-alert-error" role="alert" data-uf-rate-error>' . uniformEscape($rateError) . '</div>';
+}
 $form .= $uniform;
 $form .= '</form>';
 echo $form;

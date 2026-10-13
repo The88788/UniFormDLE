@@ -25,7 +25,7 @@
 templateFolder = inline
 // nocache = y
 // debug = y
-required = email
+required = name, phone, email, textarea
 // hidden = newsid,user
 sendmail = y
 emails = mail@mail.ru, mail2@mail.ru

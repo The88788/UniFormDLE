@@ -5,6 +5,7 @@
  * @author     pafnuty <pafnuty10@gmail.com>
  * @link       http://pafnuty.name/
  * @link       https://twitter.com/pafnuty_name
+ * @version     2.1.0
  * @adapted    Adapted for DLE 21 / PHP 8.x by The88788.com (2026)
  */
 
@@ -37,4 +38,10 @@ $cfg = [
 		: ((isset($arConf['allowedFileTypes'])) ? $arConf['allowedFileTypes'] : false),
 	'parseSendMail'    => !empty($parseSendMail) ? $parseSendMail
 		: ((isset($arConf['parseSendMail'])) ? $arConf['parseSendMail'] : false),
+	// Trusted form configuration only; never read limiter settings from a request.
+	'rateLimitRequests' => max(1, min(1000, (int)($arConf['rateLimitRequests'] ?? 60))),
+	'rateLimitRequestWindow' => max(1, min(3600, (int)($arConf['rateLimitRequestWindow'] ?? 300))),
+	'rateLimitSubmissions' => max(1, min(1000, (int)($arConf['rateLimitSubmissions'] ?? 5))),
+	'rateLimitSubmissionWindow' => max(1, min(3600, (int)($arConf['rateLimitSubmissionWindow'] ?? 600))),
+	'rateLimitInterval' => max(0, min(3600, (int)($arConf['rateLimitInterval'] ?? 15))),
 ];

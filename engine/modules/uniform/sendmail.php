@@ -5,6 +5,7 @@
  * @author     pafnuty <pafnuty10@gmail.com>
  * @link       http://pafnuty.name/
  * @link       https://twitter.com/pafnuty_name
+ * @version     2.1.0
  * @adapted    Adapted for DLE 21 / PHP 8.x by The88788.com (2026)
  */
 
@@ -165,6 +166,7 @@ if ($member_id['user_group'] == 5) {
 /** @var array $arSendMail */
 foreach ($arSendMail as $tag => $value) {
 	if (!$cfg['sendAsPlain']) {
+		$value = uniformEscape($value);
 		$value = str_replace(["\r", "\n"], ['', '<br>'], $value);
 	}
 	$arTplTags['{'.$tag.'}'] = $value;
@@ -188,7 +190,8 @@ $mailTpl->set('{send_date}', date($config['timestamp_active'], time()));
 
 
 // Страница, с которой был вызван модуль
-$mailTpl->set('{current_page}', isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '');
+$currentPage = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '';
+$mailTpl->set('{current_page}', $cfg['sendAsPlain'] ? $currentPage : uniformEscape($currentPage));
 
 // Определяем заголовок письма
 preg_match("'\\[header\\](.*?)\\[\\/header\\]'si", $mailTpl->copy_template, $mailHeader);
