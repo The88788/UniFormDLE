@@ -1,4 +1,4 @@
-# UniForm21 2.1.0
+# UniForm 2.1.0 для Datalife Engine 21
 
 Версия адаптации: **2.1.0**, 13 октября 2026. [Changelog](CHANGELOG.md). Номер установленного модуля: `engine/modules/uniform/VERSION`.
 
