@@ -5,7 +5,7 @@
  * @author     pafnuty <pafnuty10@gmail.com>
  * @link       http://pafnuty.name/
  * @link       https://twitter.com/pafnuty_name
- * @version     2.1.1
+ * @version     2.1.2
  * @adapted    Adapted for DLE 21 / PHP 8.x by The88788.com (2026)
  */
 

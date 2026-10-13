@@ -5,7 +5,7 @@
  * @author     pafnuty <pafnuty10@gmail.com>
  * @link       http://pafnuty.name/
  * @link       https://twitter.com/pafnuty_name
- * @version     2.1.1
+ * @version     2.1.2
  * @adapted    Adapted for DLE 21 / PHP 8.x by The88788.com (2026)
  */
 
@@ -52,6 +52,12 @@ $mailTpl->result['uniformMail'] = '';
 /** @var array $cfg */
 $mailTpl->load_template('/uniform/'.$cfg['templateFolder'].'/email.tpl');
 
+// Missing optional form fields must not leak template placeholders.
+preg_match_all('/\{([a-zA-Z][a-zA-Z0-9_]*)\}/', $mailTpl->copy_template, $mailFieldNames);
+foreach ($mailFieldNames[1] as $mailFieldName) {
+    if (!in_array($mailFieldName, ['send_date', 'current_page', 'all_mail_fields'], true)
+        && !array_key_exists($mailFieldName, $arSendMail)) $arSendMail[$mailFieldName] = '';
+}
 // Собираем все теги шаблона в массив
 $arTplTags     = [];
 $allMailFields = '';
@@ -193,13 +199,6 @@ $mailTpl->set('{send_date}', date($config['timestamp_active'], time()));
 $currentPage = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '';
 $mailTpl->set('{current_page}', $cfg['sendAsPlain'] ? $currentPage : uniformEscape($currentPage));
 
-// Определяем заголовок письма
-preg_match("'\\[header\\](.*?)\\[\\/header\\]'si", $mailTpl->copy_template, $mailHeader);
-// Если передано поле header — подставим его в header :)
-$emailHeader = (isset($arSendMail['header']) && $arSendMail['header'] != '') ? trim($arSendMail['header'])
-	: (isset($mailHeader[1]) ? trim($mailHeader[1]) : '');
-$emailHeader = stripslashes($emailHeader);
-
 // Обрабатываем теги шаблона
 $mailTpl->set('', $arTplTags);
 // Тег всех полей, пришедщших из формы
@@ -213,10 +212,10 @@ if ($cfg['parseSendMail']) {
 // Компилим шаблон
 $mailTpl->compile('uniformMail');
 $message = $mailTpl->result['uniformMail'];
-// Удаляем из шаблона лишнее
-if (isset($mailHeader[0])) {
-	$message = str_replace($mailHeader[0], '', $message);
-}
+// Extract header after DLE has compiled field replacements.
+preg_match("'\\[header\\](.*?)\\[/header\\]'si", $message, $mailHeader);
+$emailHeader = !empty($arSendMail['header']) ? trim($arSendMail['header']) : trim($mailHeader[1] ?? '');
+$message = preg_replace("'\\[header\\].*?\\[/header\\]'si", '', $message);
 $message = preg_replace("'\\[uf_field_(.*?)\\](.*?)\\[/uf_field_(.*?)\\]'is", '', $message);
 $message = preg_replace("'\\[uf_select_(.*?)\\](.*?)\\[/uf_select_(.*?)\\]'is", '', $message);
 $message = preg_replace("'\\[uf_checkbox_(.*?)\\](.*?)\\[/uf_checkbox_(.*?)\\]'is", '', $message);
@@ -245,7 +244,7 @@ foreach ($arMails as $email) {
 $mail   = new dle_mail($config, $asHtml);
 
 // Определяем параметры отправки письма
-if ($config['use_admin_mail'] && $config['version_id'] < 10.5) {
+if (!empty($config['use_admin_mail']) && $config['version_id'] < 10.5) {
 	$mail->from = $config['admin_mail'];
 } else {
 	if (!empty($arSendMail['email']) && in_array('email', $arRequired)) {
@@ -267,11 +266,10 @@ if (count($arSendAttachments)) {
         if (!empty($mail->send_error)) { $uniformMailResult['failed']++; continue; }
         $sendResult = null;
 	// Обрабатываем ситуацию, когда разрешена отправка отправителю
-	if ($cfg['sendToSender']) {
 		$parsedMessage = $message;
 		$parsedHeader  = $emailHeader;
 
-		if (isset($arSendMail['email']) && $email == $arSendMail['email']) {
+		if ($cfg['sendToSender'] && isset($arSendMail['email']) && $email == $arSendMail['email']) {
 			$parsedMessage = preg_replace("'\\[not_to_sender\\](.*?)\\[/not_to_sender\\]'is", '', $parsedMessage);
 			$parsedMessage = str_replace('[to_sender]', '', $parsedMessage);
 			$parsedMessage = str_replace('[/to_sender]', '', $parsedMessage);
@@ -292,9 +290,6 @@ if (count($arSendAttachments)) {
 		}
 
 		$sendResult = $mail->send($email, $parsedHeader, $parsedMessage);
-	} else {
-		$sendResult = $mail->send($email, $emailHeader, $message);
-	}
 
         if ($sendResult === false || !empty($mail->send_error) || !empty($mail->bad_address)) $uniformMailResult['failed']++;
         else $uniformMailResult['sent']++;
