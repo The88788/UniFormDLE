@@ -5,7 +5,7 @@
  * @author     pafnuty <pafnuty10@gmail.com>
  * @link       http://pafnuty.name/
  * @link       https://twitter.com/pafnuty_name
- * @version     2.1.0
+ * @version     2.1.1
  * @adapted    Adapted for DLE 21 / PHP 8.x by The88788.com (2026)
  */
 
@@ -233,6 +233,15 @@ $message = stripslashes($message);
 // Подключаем класс для отправки почты.
 include_once(DLEPlugins::Check(ENGINE_DIR.'/classes/mail.class.php'));
 $asHtml = ($cfg['sendAsPlain']) ? false : true;
+if ($cfg['sendToSender'] && (isset($arSendMail['email']) && validEmain($arSendMail['email']))) {
+	$arMails[] = $arSendMail['email'];
+}
+
+// Отправляем почту на указанные адреса
+$uniformMailResult = ['attempted'=>0, 'sent'=>0, 'failed'=>0];
+foreach ($arMails as $email) {
+    $uniformMailResult['attempted']++;
+    try {
 $mail   = new dle_mail($config, $asHtml);
 
 // Определяем параметры отправки письма
@@ -254,12 +263,9 @@ if (count($arSendAttachments)) {
 	}
 }
 
-if ($cfg['sendToSender'] && (isset($arSendMail['email']) && validEmain($arSendMail['email']))) {
-	$arMails[] = $arSendMail['email'];
-}
 
-// Отправляем почту на указанные адреса
-foreach ($arMails as $email) {
+        if (!empty($mail->send_error)) { $uniformMailResult['failed']++; continue; }
+        $sendResult = null;
 	// Обрабатываем ситуацию, когда разрешена отправка отправителю
 	if ($cfg['sendToSender']) {
 		$parsedMessage = $message;
@@ -285,9 +291,15 @@ foreach ($arMails as $email) {
 			$parsedHeader = str_replace('[/not_to_sender]', '', $parsedHeader);
 		}
 
-		$mail->send($email, $parsedHeader, $parsedMessage);
+		$sendResult = $mail->send($email, $parsedHeader, $parsedMessage);
 	} else {
-		$mail->send($email, $emailHeader, $message);
+		$sendResult = $mail->send($email, $emailHeader, $message);
 	}
+
+        if ($sendResult === false || !empty($mail->send_error) || !empty($mail->bad_address)) $uniformMailResult['failed']++;
+        else $uniformMailResult['sent']++;
+    } catch (Throwable $exception) {
+        $uniformMailResult['failed']++;
+    }
 
 }

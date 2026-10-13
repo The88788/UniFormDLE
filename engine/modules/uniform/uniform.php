@@ -5,7 +5,7 @@
  * @author     pafnuty <pafnuty10@gmail.com>
  * @link       http://pafnuty.name/
  * @link       https://twitter.com/pafnuty_name
- * @version     2.1.0
+ * @version     2.1.1
  * @adapted    Adapted for DLE 21 / PHP 8.x by The88788.com (2026)
  */
 
@@ -42,6 +42,7 @@ $hiddenInputs = '';
 // Если данные передаются постом — "запомним" это.
 $isPost = ($_SERVER['REQUEST_METHOD'] === 'POST') ? true : false;
 $rateError = '';
+$mailError = '';
 $rateRetry = 0;
 if ($isPost) {
 	$rate = uniformRateLimit('requests', $cfg['rateLimitRequests'], $cfg['rateLimitRequestWindow']);
@@ -322,6 +323,21 @@ if (!$uniform) {
 				if (!$error) $tpl->set_block("'\\[error\\](.*?)\\[/error\\]'si", '');
 				$error = true;
 			}
+			if (!$error && $cfg['sendmail']) {
+                $arMails = getArray($cfg['emails']);
+                $uniformMailResult = ['attempted'=>0, 'sent'=>0, 'failed'=>0];
+                if ($arMails) {
+                    try { include (DLEPlugins::Check(ENGINE_DIR . '/modules/uniform/sendmail.php')); }
+                    catch (Throwable $exception) { $uniformMailResult['failed']++; }
+                }
+                if (!$uniformMailResult['attempted'] || $uniformMailResult['failed']) {
+                    $mailError = $uniformMailResult['sent']
+                        ? 'Сообщение передано не всем получателям. Не повторяйте отправку сразу: свяжитесь с нами другим способом.'
+                        : 'Не удалось передать сообщение почтовому обработчику. Попробуйте позже или свяжитесь с нами другим способом.';
+                    $tpl->set_block("'\\[error\\](.*?)\\[/error\\]'si", '');
+                    $error = true;
+                }
+            }
 			if ($error == false) {
 
 				// Если нет ошибок — значит форма отправлена удачно, нужно об этом сообщить
@@ -333,16 +349,6 @@ if (!$uniform) {
 				$tpl->set('[success]', '');
 				$tpl->set('[/success]', '');
 
-				$arMails = getArray($cfg['emails']);
-				if ($cfg['sendmail'] && count($arMails) > 0) {
-					include (DLEPlugins::Check(ENGINE_DIR . '/modules/uniform/sendmail.php'));
-
-					if ($debug) {
-						$debugTag .= '<pre class="uf-pre"><h4>arSendMail:</h4>';
-						$debugTag .= print_r($arSendMail, true);
-						$debugTag .= '</pre>';
-					}
-				}
 				unset($arSendMail);
 
 			} else {
@@ -430,6 +436,9 @@ $form = '
 ';
 $form .= ($cfg['allowAttachments'] && $maxFileSize > 0) ? '<input type="hidden" name="MAX_FILE_SIZE" value="' . $maxFileSize * 1024 . '" />' : '';
 $form .= $hiddenInputs;
+if ($mailError !== '') {
+    $form .= '<div class="uf-alert uf-alert-error" role="alert" data-uf-mail-error>' . uniformEscape($mailError) . '</div>';
+}
 if ($rateError !== '') {
 	header('Retry-After: ' . (int)$rateRetry);
 	$form .= '<div class="uf-alert uf-alert-error" role="alert" data-uf-rate-error>' . uniformEscape($rateError) . '</div>';
