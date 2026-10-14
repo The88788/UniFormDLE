@@ -1,10 +1,10 @@
-# UniForm 2.1.2 для Datalife Engine 21
+# UniForm 2.1.3 для Datalife Engine 21
 
-Версия адаптации: **2.1.2**, 14 октября 2026. [Changelog](CHANGELOG.md). Номер установленного модуля: `engine/modules/uniform/VERSION`.
+Версия адаптации: **2.1.3**, 14 октября 2026. [Changelog](CHANGELOG.md). Номер установленного модуля: `engine/modules/uniform/VERSION`.
 
 Добавлен локальный [лимит частоты заявок](docs/RATE_LIMIT_2026-10-13.md). Архив релиза пересобран с этими изменениями.
 
-Обновление безопасности от13октября2026: [изменения, установка и ограничения](docs/SECURITY_UPDATE_2026-10-13.md). Код согласован с установленными локальными копиями. [Описание релиза 2.1.2](RELEASE_NOTES_2.1.2.md).
+Обновление безопасности от13октября2026: [изменения, установка и ограничения](docs/SECURITY_UPDATE_2026-10-13.md). Код согласован с установленными локальными копиями. [Описание релиза 2.1.3](RELEASE_NOTES_2.1.3.md).
 
 ![UniForm21 - универсальные AJAX-формы для DLE 21](https://repository-images.githubusercontent.com/34575838/70601780-87ca-11e9-88b2-24e1c100cb13)
 
@@ -55,7 +55,7 @@ templates/ВАШ_ШАБЛОН/uniform/
 <script src="{THEME}/uniform/js/jquery.ladda.min.js"></script>
 <script src="{THEME}/uniform/js/jquery.form.min.js"></script>
 <script src="{THEME}/uniform/js/jquery.magnificpopup.min.js"></script>
-<script src="{THEME}/uniform/js/uniform.js?v=2.1.2"></script>
+<script src="{THEME}/uniform/js/uniform.js?v=2.1.3"></script>
 ```
 
 ### Шаг 4. Вызов форм
@@ -135,4 +135,6 @@ MIT - см. файл [LICENSE](LICENSE). Copyright (c) 2016 Павел Бело�
 
 Обработка отказов и частичной отправки: [почтовые ошибки](docs/MAIL_ERRORS_2026-10-14.md). Положительная DOC-проверка пройдена; тестовая SMTP-доставка в Mail.ru подтверждена получателем.
 
-Сборка писем и устранение тегов: [Uniform 2.1.2](RELEASE_NOTES_2.1.2.md).
+Сборка писем и устранение тегов: [Uniform 2.1.3](RELEASE_NOTES_2.1.3.md).
+
+Форматирование и обновление email.tpl: [описание 2.1.3](RELEASE_NOTES_2.1.3.md).

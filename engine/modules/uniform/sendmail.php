@@ -5,7 +5,7 @@
  * @author     pafnuty <pafnuty10@gmail.com>
  * @link       http://pafnuty.name/
  * @link       https://twitter.com/pafnuty_name
- * @version     2.1.2
+ * @version     2.1.3
  * @adapted    Adapted for DLE 21 / PHP 8.x by The88788.com (2026)
  */
 
@@ -169,11 +169,15 @@ if ($member_id['user_group'] == 5) {
 }
 
 
+// Trusted attachment metadata: names of accepted attachments only, never temporary paths.
+$arSendMail['attached_files'] = implode("\n", array_map(static function ($attachment) {
+    return (string)$attachment['name'];
+}, $arSendAttachments));
 /** @var array $arSendMail */
 foreach ($arSendMail as $tag => $value) {
 	if (!$cfg['sendAsPlain']) {
 		$value = uniformEscape($value);
-		$value = str_replace(["\r", "\n"], ['', '<br>'], $value);
+		$value = preg_replace('/\r\n|\r|\n/', '<br>', $value);
 	}
 	$arTplTags['{'.$tag.'}'] = $value;
 

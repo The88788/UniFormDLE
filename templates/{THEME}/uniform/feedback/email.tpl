@@ -24,3 +24,7 @@
 	
 	{textarea} 
 </div>
+<div style="margin-top: 16px; padding: 16px 20px; color: #555555; background: #f2f2f2; font-size: 13px; line-height: 1.5;">
+<div><b>Дата отправки:</b> {send_date}</div>
+[attached_files]<div><b>Вложения:</b><br>{attached_files}</div>[/attached_files]
+</div>
