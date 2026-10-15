@@ -1,6 +1,8 @@
-# UniForm 2.1.3 для Datalife Engine 21
+# Uniform 2.1.4 для DataLife Engine 21
 
-Версия адаптации: **2.1.3**, 14 октября 2026. [Changelog](CHANGELOG.md). Номер установленного модуля: `engine/modules/uniform/VERSION`.
+Версия адаптации: **2.1.4**, 15 октября 2026. [Changelog](CHANGELOG.md). Номер установленного модуля: `engine/modules/uniform/VERSION`.
+
+В версии 2.1.4 исправлены переносы в текстовой альтернативе HTML-писем. [Изменения и инструкция обновления](RELEASE_NOTES_2.1.4.md). JavaScript остается версии 2.1.3.
 
 Добавлен локальный [лимит частоты заявок](docs/RATE_LIMIT_2026-10-13.md). Архив релиза пересобран с этими изменениями.
 

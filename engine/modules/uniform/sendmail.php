@@ -5,7 +5,7 @@
  * @author     pafnuty <pafnuty10@gmail.com>
  * @link       http://pafnuty.name/
  * @link       https://twitter.com/pafnuty_name
- * @version     2.1.3
+ * @version     2.1.4
  * @adapted    Adapted for DLE 21 / PHP 8.x by The88788.com (2026)
  */
 
@@ -293,6 +293,8 @@ if (count($arSendAttachments)) {
 			$parsedHeader = str_replace('[/not_to_sender]', '', $parsedHeader);
 		}
 
+		// DLE generates text/plain with strip_tags: keep visible HTML line boundaries.
+		$parsedMessage = preg_replace('~(<br\b[^>]*>|</(?:p|div|h[1-6]|li|tr)>)[\t ]*(?:\r?\n)?~i', "$1\n", $parsedMessage);
 		$sendResult = $mail->send($email, $parsedHeader, $parsedMessage);
 
         if ($sendResult === false || !empty($mail->send_error) || !empty($mail->bad_address)) $uniformMailResult['failed']++;
